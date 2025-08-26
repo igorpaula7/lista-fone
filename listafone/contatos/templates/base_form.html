@@ -1,56 +1,105 @@
 {% extends "base.html" %}
+
 {% block content %}
-<h1 class="mb-4">{{ title|default:"Formulário" }}</h1>
-
-    {# mensagens do Django messages framework #}
-    {% if messages %}
-        <div>
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h2 class="h4 mb-0">{{ title|default:"Formulário" }}</h2>
                 </div>
-            {% endfor %}
-        </div>
-    {% endif %}
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="mb-4">
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 
-    <form method="post" enctype="multipart/form-data">
-        {% csrf_token %}
+                    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <p class="mb-0">{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label for="{{ field.id_for_label }}" class="form-label fw-bold">
+                                    {{ field.label }}
+                                    {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                </label>
+                                
+                                {% if field.field.widget.input_type == 'select' %}
+                                    <select name="{{ field.name }}" 
+                                            class="form-select{% if field.errors %} is-invalid{% endif %}" 
+                                            id="{{ field.id_for_label }}"
+                                            {% if field.field.required %}required{% endif %}>
+                                        {% for choice in field.field.choices %}
+                                            <option value="{{ choice.0 }}" {% if field.value == choice.0|stringformat:'s' %}selected{% endif %}>
+                                                {{ choice.1 }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                {% elif field.field.widget.input_type == 'textarea' %}
+                                    <textarea name="{{ field.name }}" 
+                                              class="form-control{% if field.errors %} is-invalid{% endif %}" 
+                                              id="{{ field.id_for_label }}" 
+                                              {% if field.field.required %}required{% endif %}>{{ field.value|default:'' }}</textarea>
+                                {% elif field.field.widget.input_type == 'checkbox' %}
+                                    <div class="form-check">
+                                        <input type="checkbox" 
+                                               name="{{ field.name }}" 
+                                               class="form-check-input{% if field.errors %} is-invalid{% endif %}" 
+                                               id="{{ field.id_for_label }}"
+                                               {% if field.value %}checked{% endif %}
+                                               {% if field.field.required %}required{% endif %}>
+                                    </div>
+                                {% else %}
+                                    <input type="{{ field.field.widget.input_type|default:'text' }}" 
+                                           name="{{ field.name }}" 
+                                           class="form-control{% if field.errors %} is-invalid{% endif %}" 
+                                           id="{{ field.id_for_label }}" 
+                                           {% if field.value %}value="{{ field.value }}"{% endif %}
+                                           {% if field.field.required %}required{% endif %}>
+                                {% endif %}
 
-        {# erros globais do form #}
-        {% if form.non_field_errors %}
-            <div class="alert alert-danger">
-                {% for error in form.non_field_errors %}
-                    <p class="mb-0">{{ error }}</p>
-                {% endfor %}
-            </div>
-        {% endif %}
+                                {% if field.help_text %}
+                                    <div class="form-text text-muted">{{ field.help_text|safe }}</div>
+                                {% endif %}
 
-        {# campos #}
-        {% for field in form %}
-            <div class="mb-3">
-                <label for="{{ field.id_for_label }}" class="form-label">
-                    {{ field.label }}
-                </label>
-                {{ field }}
-
-                {% if field.help_text %}
-                    <div class="form-text">{{ field.help_text }}</div>
-                {% endif %}
-
-                {% if field.errors %}
-                    <div class="invalid-feedback d-block">
-                        {% for error in field.errors %}
-                            <div>{{ error }}</div>
+                                {% if field.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in field.errors %}
+                                            <div><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ error }}</div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
                         {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-        {% endfor %}
 
-        <button type="submit" class="btn btn-primary">Salvar</button>
-        <a href="{{ cancel_url|default:"/" }}" class="btn btn-secondary">Cancelar</a>
-    </form>
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                            <a href="{{ cancel_url|default:'/' }}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-x-lg me-1"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Salvar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock content %}
+
 {% block scripts %}
+{{ block.super }}
 {% endblock scripts %}
